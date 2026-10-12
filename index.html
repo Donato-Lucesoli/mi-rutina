@@ -13,6 +13,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow","Segoe UI",Arial,sans-serif;line-height:1.45}
 main{max-width:860px;margin:0 auto;padding:16px}
 h3{margin:16px 0 4px}.ct{min-width:0;margin-bottom:8px}
+.bar{position:sticky;bottom:0;background:var(--card);padding:10px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 h1{font-family:"Barlow Condensed","Arial Narrow",Arial,sans-serif;font-size:2rem;margin:8px 0 12px;letter-spacing:.3px}
 .tabs,.days{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 14px}
@@ -96,19 +97,31 @@ function drawRoutine(){
     CARDIO.map(c=>`<h3>${c.t}</h3><p>${c.d}</p>`+(c.rows.length?`<table class="ct"><thead><tr><th>Fase</th><th>Velocidad</th><th>Inclinación</th></tr></thead><tbody>`+c.rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")+`</tbody></table>`:"")).join("")+
     `<h3>Consejos</h3><ul class="cardio">`+CARDIO_TIPS.map(x=>`<li>${x}</li>`).join("")+`</ul>`;return;
   }
-  routine.innerHTML=`<table><thead><tr><th>Ejercicio</th><th>Series (meta)</th><th>Reps (meta)</th><th>Peso (kg)</th><th>Series hechas</th><th>Reps hechas</th><th></th></tr></thead><tbody>`+
+  routine.innerHTML=`<table><thead><tr><th>Ejercicio</th><th>Series (meta)</th><th>Reps (meta)</th><th>Peso (kg)</th><th>Series hechas</th><th>Reps hechas</th></tr></thead><tbody>`+
   R[day].map((e,i)=>{const l=last(e[0]);return `<tr><td>${esc(e[0])}<div class="last">${l?`Último: ${l.w} kg, ${l.s}x${l.r} (${l.d})`:"Sin registros"}</div></td><td><input type="number" min="1" inputmode="numeric" value="${pl(e).s}" onchange="setPlan(${i},'s',this.value)" aria-label="Series objetivo"></td><td><input type="text" value="${pl(e).r}" onchange="setPlan(${i},'r',this.value)" aria-label="Reps objetivo"></td>
-  <td><input id="w${i}" type="number" step="0.5" min="0" inputmode="decimal" value="${l?l.w:""}" aria-label="Peso"></td>
-  <td><input id="s${i}" type="number" min="0" inputmode="numeric" value="${pl(e).s}" aria-label="Series hechas"></td>
-  <td><input id="r${i}" type="number" min="0" inputmode="numeric" value="${l?l.r:""}" aria-label="Reps hechas"></td>
-  <td><button class="save" id="b${i}" onclick="save(${i})">Guardar</button></td></tr>`}).join("")+`</tbody></table>`;
+  <td><input id="w${i}" type="text" inputmode="decimal" autocomplete="off" placeholder="${l?l.w:""}" value="${dv(e,'w')}" oninput="dr(${i},'w',this.value)" aria-label="Peso"></td>
+  <td><input id="s${i}" type="text" inputmode="numeric" autocomplete="off" value="${dv(e,'s',pl(e).s)}" oninput="dr(${i},'s',this.value)" aria-label="Series hechas"></td>
+  <td><input id="r${i}" type="text" inputmode="decimal" autocomplete="off" placeholder="${l?l.r:""}" value="${dv(e,'r')}" oninput="dr(${i},'r',this.value)" aria-label="Reps hechas"></td>
+  </tr>`}).join("")+`</tbody></table><div class="bar"><button class="on" onclick="saveAll()">Guardar todo</button><span id="msg" class="small"></span></div>`;
 }
-function save(i){
-  const e=R[day][i],w=parseFloat(document.getElementById("w"+i).value),s=parseInt(document.getElementById("s"+i).value),r=parseInt(document.getElementById("r"+i).value);
-  if(isNaN(w)||isNaN(s)||isNaN(r)){alert("Completa peso, series y repeticiones.");return}
-  log.push({ex:e[0],d:new Date().toISOString().slice(0,10),w,s,r});persist();
-  const b=document.getElementById("b"+i);b.textContent="Guardado";b.classList.add("done");
-  setTimeout(drawRoutine,700);
+let drafts={};
+function dv(e,k,d){const x=drafts[e[0]];return x&&x[k]!==undefined?x[k]:(d===undefined?"":d)}
+function dr(i,k,v){const n=R[day][i][0];(drafts[n]=drafts[n]||{})[k]=v}
+function num(x){return parseFloat(String(x).replace(",",".").trim())}
+function today(){const d=new Date(),z=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())}
+function saveAll(){
+  const add=[],bad=[],skipped=[];
+  R[day].forEach((e,i)=>{
+    const w=document.getElementById("w"+i).value.trim(),s=document.getElementById("s"+i).value,r=document.getElementById("r"+i).value.trim();
+    if(w===""&&r==="")return;
+    const rr=num(r),ww=w===""?0:num(w),ss=num(s);
+    if(isNaN(rr)||isNaN(ww)){bad.push(e[0]);return}
+    add.push({ex:e[0],d:today(),w:ww,s:isNaN(ss)?pl(e).s:ss,r:rr});
+    delete drafts[e[0]];
+  });
+  log.push(...add);persist();drawRoutine();
+  const m=document.getElementById("msg");
+  m.textContent=(add.length?"Guardados "+add.length+" ejercicios. ":"No había nada para guardar. ")+(bad.length?"Revisa peso y reps de: "+bad.join(", ")+".":"");
 }
 function allEx(){return[...R.Lunes,...R["Sábado"]].map(e=>e[0])}
 function stats(){
