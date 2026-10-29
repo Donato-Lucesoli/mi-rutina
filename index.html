@@ -17,6 +17,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow","Segoe 
 main{max-width:860px;margin:0 auto;padding:16px}
 h3{margin:16px 0 4px}.ct{min-width:0;margin-bottom:8px}
 .bar{position:sticky;bottom:0;background:var(--card);padding:10px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.blk{border-bottom:1px solid var(--line);padding:10px 0}.blk:last-of-type{border:0}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}.row input[type=text]{width:110px;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}.card h3{margin:0 0 8px}.card h4{margin:12px 0 2px}.card ul{padding-left:20px;margin:4px 0}.card li{margin-bottom:5px}
 h1{font-family:"Barlow Condensed","Arial Narrow",Arial,sans-serif;font-size:2rem;margin:8px 0 12px;letter-spacing:.3px}
 .tabs,.days{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 14px}
@@ -69,8 +70,8 @@ svg{width:100%;height:auto;display:block}
 
 <script>
 const R={
-Lunes:[["Sentadilla libre (pesada)",3,"4-6"],["Peso muerto (moderado)",3,"8-12"],["Saltos a una pierna",3,"10"],["Zancadas con disco (ida y vuelta)",3,"10"],["Zancadas laterales con disco",3,"12"],["Zancadas rusas (concentradas)",3,"20 s"],["Gemelos (ligero)",3,"15-20"],["Tibial",3,"15-20"]],
-"Sábado":[["Press con mancuernas (alternando)",3,"8-12"],["Remo unilateral",3,"8-12"],["Press militar con mancuernas (arrollida y dinámica)",3,"8-12"],["Chin ups + 5 segundos",3,"4-6"],["Press francés",3,"8-12"],["Elevaciones laterales",3,"8-12"],["Crunches con disco",3,"8-12"],["Disco lado a lado",3,"8-12"],["Leg raises",3,"15-20"]]
+"Tren inf":[["Sentadilla libre (pesada)",3,"4-6"],["Peso muerto (moderado)",3,"8-12"],["Saltos a una pierna",3,"10"],["Zancadas con disco (ida y vuelta)",3,"10"],["Zancadas laterales con disco",3,"12"],["Zancadas rusas (concentradas)",3,"20 s"],["Gemelos (ligero)",3,"15-20"],["Tibial",3,"15-20"]],
+"Tren sup":[["Press con mancuernas (alternando)",3,"8-12"],["Remo unilateral",3,"8-12"],["Press militar con mancuernas (arrollida y dinámica)",3,"8-12"],["Chin ups + 5 segundos",3,"4-6"],["Press francés",3,"8-12"],["Elevaciones laterales",3,"8-12"],["Crunches con disco",3,"8-12"],["Disco lado a lado",3,"8-12"],["Leg raises",3,"15-20"]]
 };
 const CARDIO=[
 {t:"Martes: Zona 2 trotando (35-45 min)",d:"Trote continuo a ritmo conversacional. Es la base aeróbica de todo lo demás. Si te falta el aire para hablar, baja la velocidad.",rows:[["Entrada en calor, 5 min","6-7 km/h","0-1%"],["Trote continuo, 30-35 min","9-10.5 km/h","1%"],["Vuelta a la calma, 5 min","5-6 km/h","0%"]]},
@@ -84,17 +85,18 @@ let plan={};
 try{plan=JSON.parse(localStorage.getItem(PK)||"{}")}catch(e){plan={}}
 function pl(e){return plan[e[0]]||{s:e[1],r:e[2]}}
 function setPlan(i,k,v){const e=R[day][i],c=pl(e);plan[e[0]]={s:c.s,r:c.r};plan[e[0]][k]=k==="s"?(parseInt(v)||c.s):v;try{localStorage.setItem(PK,JSON.stringify(plan))}catch(x){}}
-let log=[],day="Lunes";
+let log=[],day="Tren inf";
 try{log=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){log=[]}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(log))}catch(e){}}
 function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 function last(ex){const l=log.filter(x=>x.ex===ex);return l[l.length-1]}
-function tab(n){s1.hidden=n!==1;s2.hidden=n!==2;t1.className=n===1?"on":"";t2.className=n===2?"on":"";if(n===2)stats()}
+function tab(n){s1.hidden=n!==1;s2.hidden=n!==2;t1.className=n===1?"on":"";t2.className=n===2?"on":"";if(n===2)stats();}
 function drawDays(){
-  days.innerHTML=[...Object.keys(R),"Cardio"].map(d=>`<button class="${d===day?"on":""}" onclick="setDay('${d}')">${d}</button>`).join("");
+  days.innerHTML=[...Object.keys(R),"Cardio","Básquet"].map(d=>`<button class="${d===day?"on":""}" onclick="setDay('${d}')">${d}</button>`).join("");
 }
 function setDay(d){day=d;drawDays();drawRoutine()}
 function drawRoutine(){
+  if(day==="Básquet"){routine.innerHTML=basketHTML();return}
   if(day==="Cardio"){
     routine.innerHTML=`<p class="small">Miércoles y viernes juegas básquet, por eso el cardio va martes y jueves. Está armado para correr, con nivel exigente y progresivo porque quieres mejorar tu rendimiento.</p>`+
     CARDIO.map(c=>`<h3>${c.t}</h3><p>${c.d}</p>`+(c.rows.length?`<table class="ct"><thead><tr><th>Fase</th><th>Velocidad</th><th>Inclinación</th></tr></thead><tbody>`+c.rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")+`</tbody></table>`:"")).join("")+
@@ -126,7 +128,7 @@ function saveAll(){
   const m=document.getElementById("msg");
   m.textContent=(add.length?"Guardados "+add.length+" ejercicios. ":"No había nada para guardar. ")+(bad.length?"Revisa peso y reps de: "+bad.join(", ")+".":"");
 }
-function allEx(){return[...R.Lunes,...R["Sábado"]].map(e=>e[0])}
+function allEx(){return[...R["Tren inf"],...R["Tren sup"]].map(e=>e[0])}
 function stats(){
   const cur=exSel.value||allEx()[0];
   exSel.innerHTML=allEx().map(e=>`<option ${e===cur?"selected":""}>${esc(e)}</option>`).join("");
@@ -150,6 +152,47 @@ function line(l){
 }
 function del(i){log.splice(i,1);persist();stats();drawRoutine()}
 function resetAll(){if(confirm("¿Borrar todos los registros?")){log=[];persist();stats();drawRoutine()}}
+const BB="bball_v1";let bb={};
+try{bb=JSON.parse(localStorage.getItem(BB)||"{}")}catch(e){bb={}}
+if(!bb.log)bb.log=[];
+let bd={};
+const TIRO=[
+["fl","Floaters desde 10-15 pies (3-4.5 m)","50 hechos",
+"5 posiciones (esquinas, codos y centro), 10 hechos en cada una. Salida a una mano, pelota alta y toque suave."],
+["mid","Tiros dentro de la línea de 3","25 hechos","Desde media distancia. Frena balanceado y sube recto."],
+["pu","Pull up en 1-2","25 hechos","Dos pasos hacia el aro, frenas en balance y tiras."],
+["hop","Catch and shoot de 3 con hop","50 hechos","Pies listos antes de recibir, salto corto y caes con los dos pies a la vez."],
+["s12","Catch and shoot de 3 con 1-2","50 hechos","Recibes y das dos pasos con ritmo de uno-dos antes de tirar."],
+["lat","Movimientos laterales y tiro de 3 tras recibir","100 hechos","Desplázate de lado, recibe y tira de 3 sin perder la base ni la alineación al aro."],
+["game","Tus tiros de partido","100 hechos","Desde las posiciones que más tiras en los partidos y a velocidad de juego."],
+["ft","Tiros libres","100 hechos","Misma rutina antes de cada tiro: respira, bota, mira el aro y tira."]];
+const GK="bbgoal_v1";let goals={};
+try{goals=JSON.parse(localStorage.getItem(GK)||"{}")}catch(e){goals={}}
+function goal(x){return goals[x[0]]!==undefined?goals[x[0]]:parseInt(x[2])}
+function goalTotal(){return TIRO.reduce((a,x)=>a+goal(x),0)}
+function setGoal(id,v){const n=parseInt(v);if(isNaN(n)||n<0)return;goals[id]=n;try{localStorage.setItem(GK,JSON.stringify(goals))}catch(e){}document.getElementById("bgt").textContent=goalTotal()}
+function bset(k,v){bd[k]=v}
+function lastBB(id){const l=bb.log.filter(x=>x.id===id);return l[l.length-1]}
+function basketHTML(){
+  return `<p class="small">Meta total: <b id="bgt">${goalTotal()}</b> hechos (puedes cambiar la meta de cada ejercicio). Anota cuántos intentaste y cuántos convertiste en cada ejercicio.</p><table><thead><tr><th>Ejercicio</th><th>Meta</th><th>Intentos</th><th>Hechos</th></tr></thead><tbody>`+
+  TIRO.map(x=>{const l=lastBB(x[0]);
+    const last=l?`Último (${l.d}): ${l.m}${l.a?"/"+l.a+" ("+Math.round(l.m/l.a*100)+"%)":""}`:"Sin registros";
+    return `<tr><td>${x[1]}<div class="small">${x[3]}</div><div class="last">${last}</div></td><td><input type="text" inputmode="numeric" autocomplete="off" value="${goal(x)}" onchange="setGoal('${x[0]}',this.value)" aria-label="Meta de hechos"></td>
+    <td><input id="ba${x[0]}" type="text" inputmode="numeric" autocomplete="off" value="${bd["ba"+x[0]]||""}" oninput="bset('ba${x[0]}',this.value)" aria-label="Intentos"></td>
+    <td><input id="bm${x[0]}" type="text" inputmode="numeric" autocomplete="off" value="${bd["bm"+x[0]]||""}" oninput="bset('bm${x[0]}',this.value)" aria-label="Hechos"></td></tr>`}).join("")+
+  `</tbody></table><div class="bar"><button class="on" onclick="saveBB()">Guardar todo</button><span id="bmsg" class="small"></span></div>`;
+}
+function saveBB(){
+  let n=0;
+  TIRO.forEach(x=>{
+    const id=x[0],m=num(document.getElementById("bm"+id).value),a=num(document.getElementById("ba"+id).value);
+    if(isNaN(m))return;
+    bb.log.push({d:today(),id,m,a:isNaN(a)?0:a});delete bd["bm"+id];delete bd["ba"+id];n++;
+  });
+  try{localStorage.setItem(BB,JSON.stringify(bb))}catch(e){}
+  drawRoutine();document.getElementById("bmsg").textContent=n?"Guardados "+n+" ejercicios.":"No había nada para guardar.";
+}
+
 drawDays();drawRoutine();
 </script>
 </body>
